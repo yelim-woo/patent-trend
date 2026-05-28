@@ -151,19 +151,38 @@ python "${CLAUDE_SKILL_DIR}/_gen_report_stage_c.py" <폴더>
 Claude는 다음 순서로 진행한다:
 
 ```
-0. (비표준 데이터인 경우) 엑셀 파일 하나 Read → column_map.json 작성
-1. 대시보드 상태 파일 저장 (stage2-state.json)
-2. python _gen_report_stage_a.py <폴더>
-3. stats_{1..10}.json 10개를 Read
-4. bullets_{1..10}.json 10개 Write
-5. HWPX_TEMPLATE 환경변수 설정 후 python _gen_report_stage_c.py <폴더>
-6. 최종 Trend_report.hwpx 경로 안내
-7. 웹 대시보드 안내: http://localhost:3100/stage2
+0. 대시보드 서버 시작 (이미 떠 있으면 건너뜀)
+1. (비표준 데이터인 경우) 엑셀 파일 하나 Read → column_map.json 작성
+2. 대시보드 상태 파일 저장 (stage2-state.json)
+3. python _gen_report_stage_a.py <폴더>
+4. stats_{1..10}.json 10개를 Read
+5. bullets_{1..10}.json 10개 Write
+6. HWPX_TEMPLATE 환경변수 설정 후 python _gen_report_stage_c.py <폴더>
+7. 최종 Trend_report.hwpx 경로 안내
+8. 웹 대시보드 안내: http://localhost:$PORT/stage2
 ```
+
+### 대시보드 서버 시작
+
+분석 시작 **전에** 대시보드 서버가 떠 있는지 확인하고, 없으면 시작한다:
+
+```bash
+cd "${CLAUDE_PROJECT_DIR}/.claude/skills/patent-search/dashboard"
+if [ ! -d node_modules ]; then
+  npm install --silent 2>/dev/null
+fi
+PORT=3000
+while lsof -i :$PORT >/dev/null 2>&1 || netstat -an 2>/dev/null | grep -q ":$PORT "; do
+  PORT=$((PORT + 1))
+done
+npx next dev --hostname 0.0.0.0 --port $PORT &
+```
+
+이미 서버가 실행 중이면 (포트가 사용 중이면) 해당 포트를 그대로 사용한다.
 
 ### 대시보드 연동 (stage2-state.json)
 
-Stage A 실행 **전에** 반드시 아래 파일을 Write로 저장한다:
+서버 시작 후, Stage A 실행 **전에** 반드시 아래 파일을 Write로 저장한다:
 
 경로: `${CLAUDE_PROJECT_DIR}/.claude/skills/patent-search/dashboard/public/stage2-state.json`
 
